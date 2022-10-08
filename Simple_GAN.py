@@ -46,7 +46,7 @@ learning_rate = 3e-4
 z_dim = 64
 img_dim = 28 * 28 * 1
 batch_size = 32
-num_epochs = 50
+num_epochs = 120
 writer_fake = SummaryWriter(f"logs/fake")
 writer_real = SummaryWriter(f"logs/real")
 step = 0
@@ -81,6 +81,8 @@ for epoch in range(num_epochs):
         disc_fake = discriminator(fake).reshape(-1)
         lossD_fake = loss_fn(disc_fake, torch.zeros_like(disc_fake))
         lossD = (lossD_real + lossD_fake) / 2
+        # 这里的loss是带负号的Discriminator表达式，所以当我们目标是Max Discriminator的时候，需要最小化我们的lossD
+        # 即我们最后Compute出来的Loss的值是越小越好的
         optimizer_disc.zero_grad()
         lossD.backward(retain_graph=True)  # retain the grads and the grads will not be freed
         optimizer_disc.step()
@@ -90,6 +92,7 @@ for epoch in range(num_epochs):
         # saturating gradients
         output = discriminator(fake).reshape(-1)
         lossG = loss_fn(output, torch.ones_like(output))
+        # min Generator就是max log(D(G(z))， 而对应到表达式多了一个负号，因而最后也是最小化我们的Loss
         optimizer_gen.zero_grad()
         lossG.backward()
         optimizer_gen.step()
